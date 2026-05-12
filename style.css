@@ -71,16 +71,26 @@ html, body, [class*="css"] {
 .welcome-text   { color: #4338CA; font-size: 1rem; margin: 0 0 20px; }
 .welcome-hint   { color: var(--muted); font-size: .9rem; margin-top: 20px; }
 
-/* ── Topic chips ─────────────────────────────────────────────────────── */
-.chip-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-.chip {
-  background: var(--primary);
-  color: #fff;
-  border-radius: 999px;
-  padding: 6px 16px;
-  font-size: .85rem;
-  font-weight: 700;
-  letter-spacing: .3px;
+/* ── Example box ─────────────────────────────────────────────────────── */
+.example-box {
+  background: rgba(255,255,255,0.7);
+  border: 1.5px dashed #A5B4FC;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 16px 0 8px;
+  text-align: left;
+}
+.example-label {
+  font-weight: 800;
+  color: var(--primary);
+  font-size: .95rem;
+  margin: 0 0 10px !important;
+}
+.example-item {
+  color: #3730A3;
+  font-size: .88rem;
+  margin: 4px 0 !important;
+  line-height: 1.5;
 }
 
 /* ── Chat messages ───────────────────────────────────────────────────── */
