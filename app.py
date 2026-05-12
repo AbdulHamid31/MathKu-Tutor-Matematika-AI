@@ -1,0 +1,162 @@
+import streamlit as st
+import google.generativeai as genai
+import time
+import re
+
+# ── Page config ──────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="MathKu – Tutor Matematika AI",
+    page_icon="🧮",
+    layout="centered",
+    initial_sidebar_state="collapsed",
+)
+
+# ── Load CSS ──────────────────────────────────────────────────────────────────
+with open("style.css") as f:
+    st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+# ── Gemini setup ──────────────────────────────────────────────────────────────
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+
+SYSTEM_PROMPT = """Kamu adalah Kak Matica, tutor matematika ramah dan sabar untuk siswa SD dan SMP (usia 6–15 tahun).
+
+ATURAN WAJIB:
+1. Selalu sapa dengan hangat jika siswa menyapa.
+2. Jika siswa mengajukan soal atau pertanyaan matematika (operasi hitung, aljabar, geometri, pecahan, dll.):
+   - JANGAN langsung berikan jawaban akhir.
+   - Jelaskan langkah demi langkah dengan bahasa yang mudah dimengerti anak SD/SMP.
+   - Gunakan emoji dan analogi yang menyenangkan.
+   - Di akhir, tanyakan "Apakah kamu sudah paham? Mau coba soal serupa? 😊"
+3. Untuk percakapan umum (bukan soal), jawab dengan ramah dan dorong siswa untuk belajar.
+4. Format jawaban langkah-langkah menggunakan:
+   📌 **Langkah 1:** ...
+   📌 **Langkah 2:** ...
+   ✅ **Jawaban:** ... (tampilkan di akhir setelah semua langkah)
+5. Selalu positif, tidak pernah meremehkan kesalahan siswa.
+6. Fokus hanya pada matematika SD–SMP; tolak sopan pertanyaan di luar topik.
+"""
+
+def get_gemini_response(messages: list[dict]) -> str:
+    if not GEMINI_API_KEY:
+        return "⚠️ API Key Gemini belum diatur. Silakan tambahkan di **Streamlit Secrets** dengan key `GEMINI_API_KEY`."
+    try:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT,
+        )
+        # Convert to Gemini format
+        history = []
+        for msg in messages[:-1]:
+            history.append({
+                "role": "user" if msg["role"] == "user" else "model",
+                "parts": [msg["content"]],
+            })
+        chat = model.start_chat(history=history)
+        response = chat.send_message(messages[-1]["content"])
+        return response.text
+    except Exception as e:
+        return f"❌ Terjadi kesalahan: {str(e)}"
+
+
+def stream_text(text: str):
+    """Yield text word by word for streaming effect."""
+    words = text.split(" ")
+    for i, word in enumerate(words):
+        yield word + (" " if i < len(words) - 1 else "")
+        time.sleep(0.02)
+
+
+# ── Session state ─────────────────────────────────────────────────────────────
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "greeted" not in st.session_state:
+    st.session_state.greeted = False
+
+# ── Header ────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="header-wrap">
+  <div class="header-icon">🧮</div>
+  <div>
+    <h1 class="header-title">MathKu</h1>
+    <p class="header-sub">Tutor Matematika AI · SD &amp; SMP</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Welcome banner (shown only at start) ──────────────────────────────────────
+if not st.session_state.messages:
+    st.markdown("""
+<div class="welcome-card">
+  <p class="welcome-emoji">👋</p>
+  <h2 class="welcome-title">Halo! Aku Kak Matica</h2>
+  <p class="welcome-text">Tutor matematika AI yang siap membantumu belajar dengan cara yang menyenangkan!</p>
+  <div class="chip-row">
+    <span class="chip">➕ Operasi Hitung</span>
+    <span class="chip">📐 Geometri</span>
+    <span class="chip">🔢 Aljabar</span>
+    <span class="chip">½ Pecahan</span>
+  </div>
+  <p class="welcome-hint">Ketik soal atau sapaan di bawah untuk mulai belajar ✏️</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ── Quick-start suggestion pills ─────────────────────────────────────────────
+    suggestions = [
+        "Halo Kak, bisa bantu aku?",
+        "2x + 5 = 15, x = ?",
+        "Luas lingkaran jari-jari 7 cm",
+        "Jelaskan pecahan campuran",
+    ]
+    cols = st.columns(len(suggestions))
+    for col, sug in zip(cols, suggestions):
+        if col.button(sug, key=f"sug_{sug}", use_container_width=True):
+            st.session_state.messages.append({"role": "user", "content": sug})
+            with st.spinner("Kak Matica sedang menjawab…"):
+                reply = get_gemini_response(st.session_state.messages)
+            st.session_state.messages.append({"role": "assistant", "content": reply})
+            st.rerun()
+
+# ── Chat history ──────────────────────────────────────────────────────────────
+for msg in st.session_state.messages:
+    role_label = "Kamu" if msg["role"] == "user" else "Kak Matica"
+    avatar = "🧑‍🎓" if msg["role"] == "user" else "🤖"
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.markdown(msg["content"])
+
+# ── Chat input ────────────────────────────────────────────────────────────────
+if prompt := st.chat_input("Ketik soal matematika atau sapaan…"):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user", avatar="🧑‍🎓"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant", avatar="🤖"):
+        with st.spinner("Kak Matica sedang berpikir…"):
+            reply = get_gemini_response(st.session_state.messages)
+        st.write_stream(stream_text(reply))
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### ⚙️ Pengaturan")
+    if st.button("🗑️ Hapus Percakapan", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
+    st.divider()
+    st.markdown("### 📚 Topik yang Bisa Ditanyakan")
+    topics = {
+        "SD": ["Penjumlahan & Pengurangan", "Perkalian & Pembagian", "Pecahan", "Geometri dasar", "Pengukuran"],
+        "SMP": ["Aljabar & Persamaan", "SPLDV", "Pythagoras", "Statistika", "Peluang"],
+    }
+    for level, items in topics.items():
+        with st.expander(f"🎒 Kelas {level}"):
+            for item in items:
+                st.markdown(f"• {item}")
+
+    st.divider()
+    st.markdown(
+        "<p style='text-align:center;font-size:12px;color:#888;'>Dibuat dengan ❤️ menggunakan<br>Streamlit + Gemini AI</p>",
+        unsafe_allow_html=True,
+    )
