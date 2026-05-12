@@ -15,6 +15,37 @@ st.set_page_config(
 with open("style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+# ── Force chat input text color (override Streamlit dark theme) ───────────────
+st.markdown("""
+<style>
+.stChatInput textarea,
+.stChatInput textarea:focus,
+.stChatInput textarea:active,
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+div[data-testid="stChatInputContainer"] textarea,
+section[data-testid="stBottom"] textarea,
+section[data-testid="stBottom"] div textarea {
+    color: #111111 !important;
+    background-color: #ffffff !important;
+    caret-color: #4F46E5 !important;
+    -webkit-text-fill-color: #111111 !important;
+}
+.stChatInput textarea::placeholder,
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #9CA3AF !important;
+    -webkit-text-fill-color: #9CA3AF !important;
+    opacity: 1 !important;
+}
+section[data-testid="stBottom"],
+section[data-testid="stBottom"] > div,
+div[data-testid="stChatInputContainer"],
+div[data-testid="stChatInputContainer"] > div {
+    background-color: #ffffff !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ── Gemini setup ──────────────────────────────────────────────────────────────
 GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
