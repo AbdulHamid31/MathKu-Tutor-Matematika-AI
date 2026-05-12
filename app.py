@@ -42,7 +42,7 @@ def get_gemini_response(messages: list[dict]) -> str:
     try:
         genai.configure(api_key=GEMINI_API_KEY)
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=SYSTEM_PROMPT,
         )
         # Convert to Gemini format
@@ -90,32 +90,17 @@ if not st.session_state.messages:
 <div class="welcome-card">
   <p class="welcome-emoji">👋</p>
   <h2 class="welcome-title">Halo! Aku Kak Matica</h2>
-  <p class="welcome-text">Tutor matematika AI yang siap membantumu belajar dengan cara yang menyenangkan!</p>
-  <div class="chip-row">
-    <span class="chip">➕ Operasi Hitung</span>
-    <span class="chip">📐 Geometri</span>
-    <span class="chip">🔢 Aljabar</span>
-    <span class="chip">½ Pecahan</span>
+  <p class="welcome-text">Tutor matematika AI yang siap membantumu belajar langkah demi langkah!</p>
+  <div class="example-box">
+    <p class="example-label">💡 Contoh yang bisa kamu tanyakan:</p>
+    <p class="example-item">• "Halo kak, bisa bantu aku belajar matematika?"</p>
+    <p class="example-item">• "2x + 5 = 15, nilai x berapa kak?"</p>
+    <p class="example-item">• "Cara menghitung luas lingkaran gimana?"</p>
+    <p class="example-item">• "Aku bingung soal pecahan campuran 😅"</p>
   </div>
-  <p class="welcome-hint">Ketik soal atau sapaan di bawah untuk mulai belajar ✏️</p>
+  <p class="welcome-hint">⬇️ Langsung ketik pertanyaanmu di kotak chat di bawah!</p>
 </div>
 """, unsafe_allow_html=True)
-
-# ── Quick-start suggestion pills ─────────────────────────────────────────────
-    suggestions = [
-        "Halo Kak, bisa bantu aku?",
-        "2x + 5 = 15, x = ?",
-        "Luas lingkaran jari-jari 7 cm",
-        "Jelaskan pecahan campuran",
-    ]
-    cols = st.columns(len(suggestions))
-    for col, sug in zip(cols, suggestions):
-        if col.button(sug, key=f"sug_{sug}", use_container_width=True):
-            st.session_state.messages.append({"role": "user", "content": sug})
-            with st.spinner("Kak Matica sedang menjawab…"):
-                reply = get_gemini_response(st.session_state.messages)
-            st.session_state.messages.append({"role": "assistant", "content": reply})
-            st.rerun()
 
 # ── Chat history ──────────────────────────────────────────────────────────────
 for msg in st.session_state.messages:
